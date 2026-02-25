@@ -12,6 +12,7 @@ import {
   Alert,
   Linking,
 } from "react-native";
+import { useRouter } from "expo-router";
 
 // ============================================
 // Solana RPC — just fetch()! Same as MERN.
@@ -77,13 +78,13 @@ const timeAgo = (ts: number) => {
 // App
 // ============================================
 
-export function WalletScreen() {
+export default function WalletScreen() {
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [balance, setBalance] = useState<number | null>(null);
   const [tokens, setTokens] = useState<any[]>([]);
   const [txns, setTxns] = useState<any[]>([]);
-
+  const router = useRouter();
   const search = async () => {
     const addr = address.trim();
     if (!addr) return Alert.alert("Enter a wallet address");
@@ -176,10 +177,10 @@ export function WalletScreen() {
               keyExtractor={(t) => t.mint}
               scrollEnabled={false}
               renderItem={({ item }) => (
-                <View style={s.row}>
+                <TouchableOpacity style={s.row} onPress={() => router.push(`/token/${item.mint}`)}>
                   <Text style={s.mint}>{short(item.mint, 6)}</Text>
                   <Text style={s.amount}>{item.amount}</Text>
-                </View>
+                </TouchableOpacity>
               )}
             />
           </>
