@@ -109,3 +109,70 @@ export async function getSwapQuote(
 
   throw lastError || new Error("Failed to get quote after 3 attempts");
 }
+export async function getSwapTransaction(
+  quoteResponse: QuoteResponse,
+  userPublicKey: string
+): Promise<string> {
+  console.log("[jupiter] getSwapTransaction called");
+  console.log("[jupiter] userPublicKey:", userPublicKey);
+
+  const swapUrl = `${JUPITER_API}/swap`;
+  console.log("[jupiter] posting swap to:", swapUrl);
+
+  const response = await fetch(swapUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "x-api-key": JUPITER_API_KEY,
+    },
+    body: JSON.stringify({
+      quoteResponse,
+      userPublicKey,
+      wrapAndUnwrapSol: true,
+      dynamicComputeUnitLimit: true,
+      prioritizationFeeLamports: {
+        priorityLevelWithMaxLamports: {
+          priorityLevel: "high",
+          maxLamports: 1000000,
+        },
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("[jupiter] swap tx failed:", response.status, errorText);
+    throw new Error(`Jupiter swap failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  console.log("[jupiter] swap transaction received");
+  return data.swapTransaction;
+}
+export async function getSwapTokenPrice(mintAddress:string):Promise<number>{
+   try {
+    const response = await fetch(
+      `https://api.jup.ag/price/v2?ids=${mintAddress}`,
+      {
+        headers: {
+          "x-api-key": JUPITER_API_KEY,
+        },
+      }
+    );
+    const data = await response.json();
+    return data.data?.[mintAddress]?.price || 0;
+  } catch {
+    return 0;
+  }
+}
+export function toSmallestUnit(amount: number, decimals: number): number {
+  return Math.round(amount * Math.pow(10, decimals));
+}
+
+export function fromSmallestUnit(
+  amount: number | string,
+  decimals: number
+): number {
+  return Number(amount) / Math.pow(10, decimals);
+}
